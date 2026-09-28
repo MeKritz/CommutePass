@@ -1,0 +1,2728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>CommutePass | Smart AI Commute</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    * {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top right, rgba(34,211,238,.10), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(139,92,246,.10), transparent 30%),
+        #020617;
+      color: #e5e7eb;
+    }
+
+    .glass {
+      background: rgba(15,23,42,.78);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(148,163,184,.15);
+    }
+
+    .glow {
+      box-shadow:
+        0 0 25px rgba(34,211,238,.12),
+        0 0 60px rgba(139,92,246,.08);
+    }
+
+    .vehicle-card {
+      transition: .25s ease;
+      cursor: pointer;
+    }
+
+    .vehicle-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(34,211,238,.55);
+    }
+
+    .vehicle-card.selected {
+      border-color: #22d3ee;
+      background: rgba(8,47,73,.45);
+      box-shadow: 0 0 20px rgba(34,211,238,.12);
+    }
+
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% {
+        box-shadow: 0 0 0 0 rgba(34,211,238,.35);
+      }
+
+      50% {
+        box-shadow: 0 0 0 15px rgba(34,211,238,0);
+      }
+    }
+
+    .assistant-float {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%,100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-7px);
+      }
+    }
+
+    .progress-fill {
+      transition: width .5s ease;
+    }
+
+    .voice-highlight {
+      animation: highlightCard 1.5s ease;
+    }
+
+    @keyframes highlightCard {
+      0% {
+        box-shadow: 0 0 0 0 rgba(34,211,238,.7);
+      }
+
+      50% {
+        box-shadow: 0 0 35px 8px rgba(34,211,238,.25);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(34,211,238,0);
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+<!-- ========================================================= -->
+<!-- NAVBAR -->
+<!-- ========================================================= -->
+
+<header class="sticky top-0 z-50 glass">
+
+  <nav class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+    <div class="flex items-center gap-3">
+
+      <div class="w-11 h-11 rounded-xl bg-cyan-400/10 border border-cyan-400/30 flex items-center justify-center">
+        <span class="text-2xl">🛵</span>
+      </div>
+
+      <div>
+        <h1 class="text-xl font-bold text-white">
+          Commute<span class="text-cyan-400">Pass</span>
+        </h1>
+
+        <p class="text-xs text-slate-400">
+          AI-powered smart commuting
+        </p>
+      </div>
+
+    </div>
+
+
+    <div class="hidden md:flex gap-7 text-sm text-slate-300">
+
+      <a href="#home" class="hover:text-cyan-400">
+        Home
+      </a>
+
+      <a href="#booking" class="hover:text-cyan-400">
+        Book Ride
+      </a>
+
+      <a href="#features" class="hover:text-cyan-400">
+        Features
+      </a>
+
+      <a href="#assistant" class="hover:text-cyan-400">
+        AI Assistant
+      </a>
+
+    </div>
+
+  </nav>
+
+</header>
+
+
+<!-- ========================================================= -->
+<!-- HERO -->
+<!-- ========================================================= -->
+
+<section id="home" class="max-w-7xl mx-auto px-6 py-16">
+
+  <div class="grid lg:grid-cols-2 gap-12 items-center">
+
+
+    <div>
+
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-300 text-sm mb-6">
+
+        <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+
+        AI-powered commute platform
+
+      </div>
+
+
+      <h2 class="text-5xl md:text-6xl font-black leading-tight text-white">
+
+        Your daily commute,
+
+        <span class="text-cyan-400">
+          simplified.
+        </span>
+
+      </h2>
+
+
+      <p class="mt-6 text-slate-400 text-lg leading-relaxed max-w-xl">
+
+        Book scheduled bike, auto, taxi and car rides with predictable
+        fares, smart driver matching and an AI voice assistant.
+
+      </p>
+
+
+      <div class="flex flex-wrap gap-4 mt-8">
+
+        <a
+          href="#booking"
+          class="px-6 py-3 rounded-xl bg-cyan-400 text-slate-950 font-bold hover:bg-cyan-300 transition"
+        >
+          Book a Ride
+        </a>
+
+
+        <button
+          onclick="startVoiceBooking()"
+          class="px-6 py-3 rounded-xl border border-cyan-400/30 bg-cyan-400/10 text-cyan-300 font-bold hover:bg-cyan-400/20 transition"
+        >
+          🎙️ Book with Voice
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- DYNAMIC TODAY'S COMMUTE -->
+    <!-- ===================================================== -->
+
+    <div class="glass glow rounded-3xl p-8">
+
+      <div class="flex items-center justify-between mb-6">
+
+        <div>
+
+          <p id="commuteDateLabel"
+             class="text-sm text-slate-400">
+            Today's commute
+          </p>
+
+          <h3
+            id="commuteRoute"
+            class="text-xl font-bold text-white"
+          >
+            Home → College
+          </h3>
+
+        </div>
+
+
+        <div class="text-right">
+
+          <p class="text-xs text-slate-500">
+            Fare
+          </p>
+
+          <p
+            id="commuteFare"
+            class="text-2xl font-black text-cyan-400"
+          >
+            ₹65
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="space-y-4">
+
+        <div class="flex items-center gap-4">
+
+          <div class="w-10 h-10 rounded-full bg-cyan-400/10 flex items-center justify-center">
+            📍
+          </div>
+
+          <div>
+
+            <p class="text-xs text-slate-500">
+              Pickup
+            </p>
+
+            <p
+              id="commutePickup"
+              class="font-semibold"
+            >
+              Home
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="ml-5 border-l border-dashed border-slate-600 h-6"></div>
+
+
+        <div class="flex items-center gap-4">
+
+          <div class="w-10 h-10 rounded-full bg-violet-400/10 flex items-center justify-center">
+            🎓
+          </div>
+
+          <div>
+
+            <p class="text-xs text-slate-500">
+              Destination
+            </p>
+
+            <p
+              id="commuteDestination"
+              class="font-semibold"
+            >
+              College
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="mt-7 grid grid-cols-3 gap-3 text-center">
+
+        <div class="bg-slate-900/70 rounded-xl p-3">
+
+          <p class="text-xs text-slate-500">
+            Distance
+          </p>
+
+          <p
+            id="commuteDistance"
+            class="font-bold"
+          >
+            8 km
+          </p>
+
+        </div>
+
+
+        <div class="bg-slate-900/70 rounded-xl p-3">
+
+          <p class="text-xs text-slate-500">
+            Time
+          </p>
+
+          <p
+            id="commuteTime"
+            class="font-bold"
+          >
+            9:00 AM
+          </p>
+
+        </div>
+
+
+        <div class="bg-slate-900/70 rounded-xl p-3">
+
+          <p class="text-xs text-slate-500">
+            Vehicle
+          </p>
+
+          <p
+            id="commuteVehicle"
+            class="font-bold"
+          >
+            🏍️ Bike
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================================================= -->
+<!-- BOOKING SECTION -->
+<!-- ========================================================= -->
+
+<section
+  id="booking"
+  class="max-w-7xl mx-auto px-6 py-10"
+>
+
+  <div class="grid lg:grid-cols-2 gap-8">
+
+
+    <!-- ===================================================== -->
+    <!-- MANUAL BOOKING -->
+    <!-- ===================================================== -->
+
+    <div class="glass rounded-3xl p-7">
+
+      <div class="mb-7">
+
+        <p class="text-cyan-400 text-sm font-semibold">
+          MANUAL BOOKING
+        </p>
+
+        <h2 class="text-3xl font-bold text-white mt-1">
+          Plan your ride
+        </h2>
+
+        <p class="text-slate-400 mt-2">
+          Choose your route, date, time and vehicle.
+        </p>
+
+      </div>
+
+
+      <label class="text-sm text-slate-400">
+        Pickup location
+      </label>
+
+      <input
+        id="pickup"
+        type="text"
+        placeholder="e.g. Home"
+        class="w-full mt-2 mb-5 px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 focus:border-cyan-400 outline-none"
+      >
+
+
+      <label class="text-sm text-slate-400">
+        Destination
+      </label>
+
+      <input
+        id="destination"
+        type="text"
+        placeholder="e.g. College"
+        class="w-full mt-2 mb-5 px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 focus:border-cyan-400 outline-none"
+      >
+
+
+      <label class="text-sm text-slate-400">
+        Travel date
+      </label>
+
+      <select
+        id="dateOption"
+        onchange="handleDateOption()"
+        class="w-full mt-2 mb-3 px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 outline-none"
+      >
+
+        <option value="today">
+          Today
+        </option>
+
+        <option value="tomorrow">
+          Tomorrow
+        </option>
+
+        <option value="specific">
+          Choose specific date
+        </option>
+
+      </select>
+
+
+      <input
+        id="specificDate"
+        type="date"
+        class="hidden w-full mb-5 px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 outline-none"
+      >
+
+
+      <label class="text-sm text-slate-400">
+        Pickup time
+      </label>
+
+      <input
+        id="rideTime"
+        type="time"
+        value="09:00"
+        class="w-full mt-2 mb-6 px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 outline-none"
+      >
+
+
+      <label class="text-sm text-slate-400">
+        Choose vehicle
+      </label>
+
+
+      <div class="grid grid-cols-2 gap-3 mt-3">
+
+
+        <div
+          class="vehicle-card selected border border-slate-700 rounded-2xl p-4"
+          data-vehicle="bike"
+          onclick="selectVehicle('bike')"
+        >
+
+          <div class="text-3xl">
+            🏍️
+          </div>
+
+          <p class="font-bold mt-2">
+            Bike
+          </p>
+
+          <p class="text-xs text-slate-500">
+            Fast & affordable
+          </p>
+
+        </div>
+
+
+        <div
+          class="vehicle-card border border-slate-700 rounded-2xl p-4"
+          data-vehicle="auto"
+          onclick="selectVehicle('auto')"
+        >
+
+          <div class="text-3xl">
+            🛺
+          </div>
+
+          <p class="font-bold mt-2">
+            Auto
+          </p>
+
+          <p class="text-xs text-slate-500">
+            Comfortable
+          </p>
+
+        </div>
+
+
+        <div
+          class="vehicle-card border border-slate-700 rounded-2xl p-4"
+          data-vehicle="taxi"
+          onclick="selectVehicle('taxi')"
+        >
+
+          <div class="text-3xl">
+            🚕
+          </div>
+
+          <p class="font-bold mt-2">
+            Taxi
+          </p>
+
+          <p class="text-xs text-slate-500">
+            Premium ride
+          </p>
+
+        </div>
+
+
+        <div
+          class="vehicle-card border border-slate-700 rounded-2xl p-4"
+          data-vehicle="car"
+          onclick="selectVehicle('car')"
+        >
+
+          <div class="text-3xl">
+            🚗
+          </div>
+
+          <p class="font-bold mt-2">
+            Car
+          </p>
+
+          <p class="text-xs text-slate-500">
+            Private ride
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- FARE -->
+
+      <div class="mt-6 p-5 rounded-2xl bg-slate-950 border border-slate-800">
+
+        <div class="flex justify-between items-center">
+
+          <div>
+
+            <p class="text-sm text-slate-500">
+              Estimated fare
+            </p>
+
+            <p
+              id="distanceText"
+              class="text-xs text-slate-600 mt-1"
+            >
+              Enter locations to calculate
+            </p>
+
+          </div>
+
+
+          <p
+            id="fareAmount"
+            class="text-3xl font-black text-cyan-400"
+          >
+            ₹0
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <button
+        onclick="calculateAndPrepareBooking()"
+        class="w-full mt-5 py-4 rounded-xl bg-cyan-400 text-slate-950 font-black hover:bg-cyan-300 transition"
+      >
+        Calculate Fare
+      </button>
+
+
+      <button
+        onclick="confirmManualBooking()"
+        class="w-full mt-3 py-4 rounded-xl bg-violet-500 text-white font-bold hover:bg-violet-400 transition"
+      >
+        Confirm Booking
+      </button>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- AI ASSISTANT -->
+    <!-- ===================================================== -->
+
+    <div
+      id="assistant"
+      class="glass rounded-3xl p-7 flex flex-col"
+    >
+
+      <div class="flex items-center gap-4 mb-6">
+
+
+        <div class="assistant-float">
+
+          <svg
+            width="90"
+            height="90"
+            viewBox="0 0 100 100"
+          >
+
+            <circle
+              cx="50"
+              cy="50"
+              r="46"
+              fill="#38bdf8"
+              stroke="#22d3ee"
+              stroke-width="3"
+            />
+
+            <circle
+              cx="50"
+              cy="54"
+              r="34"
+              fill="#f8fafc"
+            />
+
+            <circle
+              cx="38"
+              cy="45"
+              r="5"
+              fill="#020617"
+            />
+
+            <circle
+              cx="62"
+              cy="45"
+              r="5"
+              fill="#020617"
+            />
+
+            <circle
+              cx="50"
+              cy="57"
+              r="5"
+              fill="#8b5cf6"
+            />
+
+            <path
+              d="M38 68 Q50 78 62 68"
+              fill="none"
+              stroke="#020617"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
+
+            <rect
+              x="35"
+              y="80"
+              width="30"
+              height="10"
+              rx="5"
+              fill="#facc15"
+            />
+
+          </svg>
+
+        </div>
+
+
+        <div>
+
+          <p class="text-sm text-cyan-400 font-semibold">
+            AI VOICE ASSISTANT
+          </p>
+
+          <h2 class="text-3xl font-bold text-white">
+            Meet Mobi
+          </h2>
+
+          <p class="text-slate-400">
+            Your hands-free commute assistant
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- VOICE STATUS -->
+
+      <div
+        id="voiceStatus"
+        class="p-5 rounded-2xl bg-slate-950 border border-slate-800 mb-5"
+      >
+
+        <p class="text-sm text-slate-500">
+          Assistant status
+        </p>
+
+        <p
+          id="voiceStatusText"
+          class="font-semibold text-white mt-1"
+        >
+          Ready for voice booking
+        </p>
+
+      </div>
+
+
+      <!-- VOICE RESULT -->
+
+      <div
+        id="voiceResult"
+        class="hidden p-5 rounded-2xl bg-cyan-400/5 border border-cyan-400/20 mb-5"
+      >
+
+        <p class="text-sm text-cyan-400 font-semibold mb-3">
+          RIDE DETAILS
+        </p>
+
+        <div
+          id="voiceDetails"
+          class="text-slate-300 text-sm leading-7"
+        >
+        </div>
+
+      </div>
+
+
+      <div class="rounded-2xl bg-violet-500/10 border border-violet-400/20 p-5">
+
+        <p class="font-bold text-violet-300">
+          🎙️ Voice booking
+        </p>
+
+        <p class="text-sm text-slate-400 mt-2 leading-relaxed">
+
+          Say something like:
+
+          <br><br>
+
+          <span class="text-white">
+            “Book a bike from home to college tomorrow at 9 AM”
+          </span>
+
+          <br><br>
+
+          Mobi will calculate the fare and ask:
+
+          <span class="text-cyan-300">
+            “Would you like me to book it?”
+          </span>
+
+          <br><br>
+
+          Just say:
+
+          <span class="text-cyan-300 font-semibold">
+            “Yes, book it.”
+          </span>
+
+        </p>
+
+      </div>
+
+
+      <!-- MICROPHONE -->
+
+      <button
+        id="voiceButton"
+        onclick="startVoiceBooking()"
+        class="mt-auto pt-6 w-full"
+      >
+
+        <div
+          class="pulse w-20 h-20 mx-auto rounded-full bg-cyan-400 flex items-center justify-center text-4xl"
+        >
+          🎙️
+        </div>
+
+        <p class="text-center text-cyan-300 font-bold mt-4">
+          Tap to speak
+        </p>
+
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================================================= -->
+<!-- FEATURES -->
+<!-- ========================================================= -->
+
+<section
+  id="features"
+  class="max-w-7xl mx-auto px-6 py-20"
+>
+
+  <div class="text-center mb-12">
+
+    <p class="text-cyan-400 text-sm font-bold">
+      WHY COMMUTEPASS?
+    </p>
+
+    <h2 class="text-4xl font-black text-white mt-2">
+      Smarter than a normal ride booking app
+    </h2>
+
+  </div>
+
+
+  <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+
+
+    <div class="glass rounded-2xl p-6">
+
+      <div class="text-3xl">
+        🤖
+      </div>
+
+      <h3 class="font-bold text-lg mt-4">
+        AI Matching
+      </h3>
+
+      <p class="text-sm text-slate-400 mt-2">
+        Matches riders with suitable drivers based on route,
+        time and availability.
+      </p>
+
+    </div>
+
+
+    <div class="glass rounded-2xl p-6">
+
+      <div class="text-3xl">
+        📅
+      </div>
+
+      <h3 class="font-bold text-lg mt-4">
+        Scheduled Rides
+      </h3>
+
+      <p class="text-sm text-slate-400 mt-2">
+        Plan your daily commute in advance instead of searching
+        every morning.
+      </p>
+
+    </div>
+
+
+    <div class="glass rounded-2xl p-6">
+
+      <div class="text-3xl">
+        💰
+      </div>
+
+      <h3 class="font-bold text-lg mt-4">
+        Predictable Fare
+      </h3>
+
+      <p class="text-sm text-slate-400 mt-2">
+        Estimate your fare before confirming the ride.
+      </p>
+
+    </div>
+
+
+    <div class="glass rounded-2xl p-6">
+
+      <div class="text-3xl">
+        🎙️
+      </div>
+
+      <h3 class="font-bold text-lg mt-4">
+        Voice Booking
+      </h3>
+
+      <p class="text-sm text-slate-400 mt-2">
+        Book rides hands-free using natural voice commands.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ========================================================= -->
+<!-- RIDE STATUS -->
+<!-- ========================================================= -->
+
+<section class="max-w-4xl mx-auto px-6 pb-20">
+
+  <div
+    id="rideStatus"
+    class="hidden glass rounded-3xl p-7"
+  >
+
+    <div class="flex justify-between items-center">
+
+      <div>
+
+        <p class="text-sm text-cyan-400 font-semibold">
+          RIDE STATUS
+        </p>
+
+        <h2
+          id="rideStatusTitle"
+          class="text-2xl font-bold text-white mt-1"
+        >
+          Searching for driver...
+        </h2>
+
+      </div>
+
+      <div class="text-4xl">
+        🛵
+      </div>
+
+    </div>
+
+
+    <div class="mt-7">
+
+      <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+
+        <div
+          id="progressBar"
+          class="progress-fill h-full bg-cyan-400"
+          style="width:0%"
+        >
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <p
+      id="rideMessage"
+      class="text-slate-400 mt-4"
+    >
+    </p>
+
+  </div>
+
+</section>
+
+
+<!-- FOOTER -->
+
+<footer class="border-t border-slate-800 py-8">
+
+  <div class="max-w-7xl mx-auto px-6 text-center">
+
+    <p class="text-slate-500 text-sm">
+      © 2026 CommutePass — AI-powered smart commuting
+    </p>
+
+  </div>
+
+</footer>
+
+
+
+<script>
+
+/* ============================================================
+   GLOBAL VARIABLES
+   ============================================================ */
+
+let selectedVehicle = "bike";
+
+let calculatedFare = 0;
+
+let calculatedDistance = 0;
+
+let voiceBookingData = null;
+
+let recognition = null;
+
+let waitingForVoiceConfirmation = false;
+
+
+/* ============================================================
+   VEHICLE DATA
+   ============================================================ */
+
+const vehicles = {
+
+  bike: {
+    name: "Bike",
+    emoji: "🏍️",
+    base: 25,
+    perKm: 8
+  },
+
+  auto: {
+    name: "Auto",
+    emoji: "🛺",
+    base: 35,
+    perKm: 12
+  },
+
+  taxi: {
+    name: "Taxi",
+    emoji: "🚕",
+    base: 60,
+    perKm: 17
+  },
+
+  car: {
+    name: "Car",
+    emoji: "🚗",
+    base: 80,
+    perKm: 22
+  }
+
+};
+
+
+/* ============================================================
+   PLACE DISTANCES
+   ============================================================ */
+
+const places = {
+
+  home: 3,
+
+  college: 5,
+
+  "christ university": 6,
+
+  koramangala: 4,
+
+  indiranagar: 7,
+
+  whitefield: 14,
+
+  "electronic city": 16,
+
+  airport: 35,
+
+  "kempegowda airport": 35,
+
+  majestic: 8,
+
+  "mg road": 6,
+
+  hebbal: 13,
+
+  jayanagar: 7,
+
+  hsr: 8,
+
+  btm: 6,
+
+  marathahalli: 12,
+
+  "silk board": 9
+
+};
+
+
+/* ============================================================
+   SELECT VEHICLE
+   ============================================================ */
+
+function selectVehicle(vehicle) {
+
+  selectedVehicle = vehicle;
+
+
+  document
+    .querySelectorAll(".vehicle-card")
+    .forEach(card => {
+
+      card.classList.remove("selected");
+
+    });
+
+
+  const selectedCard =
+    document.querySelector(
+      `[data-vehicle="${vehicle}"]`
+    );
+
+
+  if (selectedCard) {
+
+    selectedCard.classList.add("selected");
+
+  }
+
+
+  calculateAndPrepareBooking();
+
+}
+
+
+/* ============================================================
+   DATE
+   ============================================================ */
+
+function handleDateOption() {
+
+  const option =
+    document.getElementById("dateOption").value;
+
+  const dateInput =
+    document.getElementById("specificDate");
+
+
+  if (option === "specific") {
+
+    dateInput.classList.remove("hidden");
+
+  } else {
+
+    dateInput.classList.add("hidden");
+
+  }
+
+}
+
+
+function getSelectedDate() {
+
+  const option =
+    document.getElementById("dateOption").value;
+
+  const now = new Date();
+
+
+  if (option === "today") {
+
+    return now.toLocaleDateString();
+
+  }
+
+
+  if (option === "tomorrow") {
+
+    const tomorrow =
+      new Date(now);
+
+    tomorrow.setDate(
+      tomorrow.getDate() + 1
+    );
+
+    return tomorrow.toLocaleDateString();
+
+  }
+
+
+  const selected =
+    document.getElementById("specificDate").value;
+
+
+  if (selected) {
+
+    return new Date(
+      selected + "T00:00:00"
+    ).toLocaleDateString();
+
+  }
+
+
+  return now.toLocaleDateString();
+
+}
+
+
+/* ============================================================
+   DISTANCE
+   ============================================================ */
+
+function estimateDistance(pickup, destination) {
+
+  pickup =
+    pickup.toLowerCase().trim();
+
+  destination =
+    destination.toLowerCase().trim();
+
+
+  let pickupDistance =
+    places[pickup];
+
+  let destinationDistance =
+    places[destination];
+
+
+  if (pickupDistance === undefined) {
+
+    pickupDistance =
+      Math.max(
+        3,
+        pickup.length % 15
+      );
+
+  }
+
+
+  if (destinationDistance === undefined) {
+
+    destinationDistance =
+      Math.max(
+        5,
+        destination.length % 18
+      );
+
+  }
+
+
+  let distance =
+    Math.abs(
+      destinationDistance -
+      pickupDistance
+    ) + 4;
+
+
+  return Math.max(
+    2,
+    Math.min(distance, 40)
+  );
+
+}
+
+
+/* ============================================================
+   FARE
+   ============================================================ */
+
+function calculateFare(
+  distance,
+  vehicle,
+  time
+) {
+
+  const data =
+    vehicles[vehicle];
+
+
+  let fare =
+    data.base +
+    distance * data.perKm;
+
+
+  if (time) {
+
+    const hour =
+      parseInt(
+        time.split(":")[0]
+      );
+
+
+    if (
+      (hour >= 7 && hour <= 10) ||
+      (hour >= 17 && hour <= 20)
+    ) {
+
+      fare *= 1.08;
+
+    }
+
+  }
+
+
+  return Math.round(
+    fare / 5
+  ) * 5;
+
+}
+
+
+/* ============================================================
+   MANUAL CALCULATION
+   ============================================================ */
+
+function calculateAndPrepareBooking() {
+
+  const pickup =
+    document.getElementById("pickup")
+      .value.trim();
+
+
+  const destination =
+    document.getElementById("destination")
+      .value.trim();
+
+
+  const time =
+    document.getElementById("rideTime").value;
+
+
+  if (!pickup || !destination) {
+
+    document.getElementById(
+      "distanceText"
+    ).textContent =
+      "Enter pickup and destination";
+
+    return;
+
+  }
+
+
+  calculatedDistance =
+    estimateDistance(
+      pickup,
+      destination
+    );
+
+
+  calculatedFare =
+    calculateFare(
+      calculatedDistance,
+      selectedVehicle,
+      time
+    );
+
+
+  document.getElementById(
+    "fareAmount"
+  ).textContent =
+    "₹" + calculatedFare;
+
+
+  document.getElementById(
+    "distanceText"
+  ).textContent =
+    `${calculatedDistance} km • ${vehicles[selectedVehicle].name}`;
+
+}
+
+
+/* ============================================================
+   SPEECH
+   ============================================================ */
+
+function assistantSay(
+  message,
+  callback = null
+) {
+
+  if (
+    !("speechSynthesis" in window)
+  ) {
+
+    if (callback) callback();
+
+    return;
+
+  }
+
+
+  speechSynthesis.cancel();
+
+
+  const speech =
+    new SpeechSynthesisUtterance(
+      message
+    );
+
+
+  speech.rate = .95;
+
+  speech.pitch = 1.05;
+
+  speech.volume = 1;
+
+
+  speech.onend = function() {
+
+    if (callback) {
+
+      callback();
+
+    }
+
+  };
+
+
+  speechSynthesis.speak(
+    speech
+  );
+
+}
+
+
+/* ============================================================
+   VOICE STATUS
+   ============================================================ */
+
+function setVoiceStatus(message) {
+
+  document.getElementById(
+    "voiceStatusText"
+  ).textContent = message;
+
+}
+
+
+/* ============================================================
+   NAVIGATE TO VOICE ASSISTANT
+   ============================================================ */
+
+function navigateToVoiceAssistant() {
+
+  const assistant =
+    document.getElementById(
+      "assistant"
+    );
+
+
+  assistant.scrollIntoView({
+
+    behavior: "smooth",
+
+    block: "center"
+
+  });
+
+
+  setTimeout(() => {
+
+    assistant.classList.remove(
+      "voice-highlight"
+    );
+
+    void assistant.offsetWidth;
+
+    assistant.classList.add(
+      "voice-highlight"
+    );
+
+  }, 500);
+
+}
+
+
+/* ============================================================
+   START VOICE BOOKING
+   ============================================================ */
+
+function startVoiceBooking() {
+
+  /*
+    NEW:
+    Automatically navigate to the
+    AI voice assistant section.
+  */
+
+  navigateToVoiceAssistant();
+
+
+  if (
+    !("webkitSpeechRecognition" in window) &&
+    !("SpeechRecognition" in window)
+  ) {
+
+    alert(
+      "Voice recognition is not supported. Please use Google Chrome."
+    );
+
+    return;
+
+  }
+
+
+  waitingForVoiceConfirmation = false;
+
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+
+  recognition =
+    new SpeechRecognition();
+
+
+  recognition.lang =
+    "en-IN";
+
+
+  recognition.continuous =
+    false;
+
+
+  recognition.interimResults =
+    false;
+
+
+  setVoiceStatus(
+    "🎙️ Listening... Tell me your ride details."
+  );
+
+
+  document
+    .getElementById("voiceResult")
+    .classList.add("hidden");
+
+
+  /*
+    Small delay allows the page
+    to finish scrolling before
+    microphone interaction.
+  */
+
+  setTimeout(() => {
+
+    recognition.start();
+
+  }, 700);
+
+
+  recognition.onresult =
+    function(event) {
+
+      const transcript =
+        event.results[0][0]
+          .transcript;
+
+
+      setVoiceStatus(
+        `You said: "${transcript}"`
+      );
+
+
+      processVoiceCommand(
+        transcript
+      );
+
+    };
+
+
+  recognition.onerror =
+    function(event) {
+
+      console.log(
+        event.error
+      );
+
+
+      setVoiceStatus(
+        "Voice recognition error. Please try again."
+      );
+
+    };
+
+
+  recognition.onend =
+    function() {
+
+      console.log(
+        "Voice recognition ended."
+      );
+
+    };
+
+}
+
+
+/* ============================================================
+   PROCESS VOICE COMMAND
+   ============================================================ */
+
+function processVoiceCommand(command) {
+
+  const text =
+    command.toLowerCase().trim();
+
+
+  let vehicle = "bike";
+
+
+  if (text.includes("auto")) {
+
+    vehicle = "auto";
+
+  }
+
+  else if (
+    text.includes("taxi") ||
+    text.includes("cab")
+  ) {
+
+    vehicle = "taxi";
+
+  }
+
+  else if (
+    text.includes("car")
+  ) {
+
+    vehicle = "car";
+
+  }
+
+  else if (
+    text.includes("bike")
+  ) {
+
+    vehicle = "bike";
+
+  }
+
+
+  let dateType =
+    "today";
+
+
+  if (
+    text.includes("tomorrow")
+  ) {
+
+    dateType =
+      "tomorrow";
+
+  }
+
+
+  let time =
+    "09:00";
+
+
+  const timeMatch =
+    text.match(
+      /(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/
+    );
+
+
+  if (timeMatch) {
+
+    let hour =
+      parseInt(
+        timeMatch[1]
+      );
+
+
+    let minute =
+      timeMatch[2] ||
+      "00";
+
+
+    const period =
+      timeMatch[3];
+
+
+    if (
+      period === "pm" &&
+      hour < 12
+    ) {
+
+      hour += 12;
+
+    }
+
+
+    if (
+      period === "am" &&
+      hour === 12
+    ) {
+
+      hour = 0;
+
+    }
+
+
+    time =
+      String(hour)
+        .padStart(2, "0") +
+      ":" +
+      minute;
+
+  }
+
+
+  let pickup = "";
+
+  let destination = "";
+
+
+  const routeMatch =
+    text.match(
+      /from\s+(.+?)\s+to\s+(.+?)(?:\s+at\s+|\s+today|\s+tomorrow|$)/
+    );
+
+
+  if (routeMatch) {
+
+    pickup =
+      routeMatch[1].trim();
+
+    destination =
+      routeMatch[2].trim();
+
+  }
+
+
+  if (
+    !pickup ||
+    !destination
+  ) {
+
+    const simpleRoute =
+      text.match(
+        /(.+?)\s+to\s+(.+?)(?:\s+at\s+|\s+today|\s+tomorrow|$)/
+      );
+
+
+    if (simpleRoute) {
+
+      pickup =
+        simpleRoute[1]
+          .replace(
+            /^(book|a|an|the|ride|bike|auto|taxi|cab|car)\s+/,
+            ""
+          )
+          .trim();
+
+
+      destination =
+        simpleRoute[2].trim();
+
+    }
+
+  }
+
+
+  if (
+    !pickup ||
+    !destination
+  ) {
+
+    setVoiceStatus(
+      "I couldn't understand the pickup and destination."
+    );
+
+
+    assistantSay(
+      "Sorry, I couldn't understand the pickup and destination. Please say, book a bike from home to college tomorrow at 9 AM."
+    );
+
+
+    return;
+
+  }
+
+
+  voiceBookingData = {
+
+    pickup,
+
+    destination,
+
+    vehicle,
+
+    dateType,
+
+    time
+
+  };
+
+
+  showVoiceBookingDetails();
+
+}
+
+
+/* ============================================================
+   SHOW VOICE DETAILS
+   ============================================================ */
+
+function showVoiceBookingDetails() {
+
+  const data =
+    voiceBookingData;
+
+
+  const distance =
+    estimateDistance(
+      data.pickup,
+      data.destination
+    );
+
+
+  const fare =
+    calculateFare(
+      distance,
+      data.vehicle,
+      data.time
+    );
+
+
+  data.distance =
+    distance;
+
+
+  data.fare =
+    fare;
+
+
+  const vehicleInfo =
+    vehicles[data.vehicle];
+
+
+  const dateText =
+    data.dateType === "today"
+      ? "today"
+      : "tomorrow";
+
+
+  document.getElementById(
+    "voiceDetails"
+  ).innerHTML = `
+
+    <div class="space-y-2">
+
+      <p>
+        <span class="text-slate-500">
+          Pickup:
+        </span>
+
+        <span class="text-white font-semibold">
+          ${capitalize(data.pickup)}
+        </span>
+      </p>
+
+
+      <p>
+        <span class="text-slate-500">
+          Destination:
+        </span>
+
+        <span class="text-white font-semibold">
+          ${capitalize(data.destination)}
+        </span>
+      </p>
+
+
+      <p>
+        <span class="text-slate-500">
+          Vehicle:
+        </span>
+
+        ${vehicleInfo.emoji}
+
+        <span class="text-white font-semibold">
+          ${vehicleInfo.name}
+        </span>
+      </p>
+
+
+      <p>
+        <span class="text-slate-500">
+          Date:
+        </span>
+
+        <span class="text-white font-semibold">
+          ${dateText}
+        </span>
+      </p>
+
+
+      <p>
+        <span class="text-slate-500">
+          Time:
+        </span>
+
+        <span class="text-white font-semibold">
+          ${formatTime(data.time)}
+        </span>
+      </p>
+
+
+      <div class="pt-3 mt-3 border-t border-slate-800">
+
+        <p class="text-slate-500 text-sm">
+          Estimated distance
+        </p>
+
+        <p class="text-white font-semibold">
+          ${distance} km
+        </p>
+
+
+        <p class="text-slate-500 text-sm mt-2">
+          Fare
+        </p>
+
+        <p class="text-3xl font-black text-cyan-400">
+          ₹${fare}
+        </p>
+
+      </div>
+
+    </div>
+  `;
+
+
+  document.getElementById(
+    "voiceResult"
+  ).classList.remove(
+    "hidden"
+  );
+
+
+  setVoiceStatus(
+    "Waiting for your voice confirmation..."
+  );
+
+
+  assistantSay(
+
+    `Your ${vehicleInfo.name} ride from ${data.pickup} to ${data.destination} ${dateText} at ${formatTime(data.time)} is approximately ${fare} rupees. Would you like me to book it?`,
+
+    function() {
+
+      startVoiceConfirmation();
+
+    }
+
+  );
+
+}
+
+
+/* ============================================================
+   AUTOMATIC VOICE CONFIRMATION
+   ============================================================ */
+
+function startVoiceConfirmation() {
+
+  if (!voiceBookingData) {
+
+    return;
+
+  }
+
+
+  if (
+    !("webkitSpeechRecognition" in window) &&
+    !("SpeechRecognition" in window)
+  ) {
+
+    return;
+
+  }
+
+
+  waitingForVoiceConfirmation =
+    true;
+
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+
+  recognition =
+    new SpeechRecognition();
+
+
+  recognition.lang =
+    "en-IN";
+
+
+  recognition.continuous =
+    false;
+
+
+  recognition.interimResults =
+    false;
+
+
+  setVoiceStatus(
+    "🎙️ Listening for confirmation... Say YES to book."
+  );
+
+
+  recognition.start();
+
+
+  recognition.onresult =
+    function(event) {
+
+      const response =
+        event.results[0][0]
+          .transcript
+          .toLowerCase()
+          .trim();
+
+
+      handleVoiceConfirmation(
+        response
+      );
+
+    };
+
+
+  recognition.onerror =
+    function(event) {
+
+      console.log(
+        event.error
+      );
+
+
+      setVoiceStatus(
+        "I didn't hear a confirmation."
+      );
+
+
+      assistantSay(
+        "I didn't hear your confirmation. Please say yes to book the ride."
+      );
+
+    };
+
+
+  recognition.onend =
+    function() {
+
+      waitingForVoiceConfirmation =
+        false;
+
+    };
+
+}
+
+
+/* ============================================================
+   CONFIRMATION
+   ============================================================ */
+
+function handleVoiceConfirmation(
+  response
+) {
+
+  const positiveWords = [
+
+    "yes",
+    "yeah",
+    "yep",
+    "okay",
+    "ok",
+    "confirm",
+    "confirmed",
+    "book",
+    "book it",
+    "book the ride",
+    "proceed",
+    "go ahead",
+    "do it",
+    "sure"
+
+  ];
+
+
+  const negativeWords = [
+
+    "no",
+    "nope",
+    "cancel",
+    "cancel it",
+    "don't book",
+    "do not book",
+    "stop"
+
+  ];
+
+
+  const positive =
+    positiveWords.some(
+      word =>
+        response.includes(word)
+    );
+
+
+  const negative =
+    negativeWords.some(
+      word =>
+        response.includes(word)
+    );
+
+
+  if (
+    positive &&
+    !negative
+  ) {
+
+    bookVoiceRide();
+
+    return;
+
+  }
+
+
+  if (negative) {
+
+    cancelVoiceBooking();
+
+    return;
+
+  }
+
+
+  assistantSay(
+
+    "Please say yes to book the ride, or no to cancel.",
+
+    function() {
+
+      startVoiceConfirmation();
+
+    }
+
+  );
+
+}
+
+
+/* ============================================================
+   BOOK VOICE RIDE
+   ============================================================ */
+
+function bookVoiceRide() {
+
+  if (!voiceBookingData) {
+
+    return;
+
+  }
+
+
+  const data =
+    voiceBookingData;
+
+
+  waitingForVoiceConfirmation =
+    false;
+
+
+  const booking = {
+
+    ...data,
+
+    bookedAt:
+      new Date().toISOString(),
+
+    bookingType:
+      "Voice Booking"
+
+  };
+
+
+  localStorage.setItem(
+    "commutePassLastBooking",
+    JSON.stringify(
+      booking
+    )
+  );
+
+
+  /*
+    IMPORTANT:
+    Update Today's Commute
+    immediately after booking.
+  */
+
+  updateTodaysCommute(
+    booking
+  );
+
+
+  setVoiceStatus(
+    "✅ Ride booked successfully!"
+  );
+
+
+  assistantSay(
+
+    `Your ${vehicles[data.vehicle].name} ride has been booked successfully. The fare is ${data.fare} rupees. Your driver will be assigned shortly.`
+
+  );
+
+
+  startRideSimulation(
+    data.vehicle,
+    data.fare
+  );
+
+}
+
+
+/* ============================================================
+   CANCEL
+   ============================================================ */
+
+function cancelVoiceBooking() {
+
+  waitingForVoiceConfirmation =
+    false;
+
+
+  setVoiceStatus(
+    "Voice booking cancelled."
+  );
+
+
+  assistantSay(
+    "Okay. I have cancelled the booking."
+  );
+
+
+  voiceBookingData =
+    null;
+
+}
+
+
+/* ============================================================
+   MANUAL BOOKING
+   ============================================================ */
+
+function confirmManualBooking() {
+
+  const pickup =
+    document.getElementById(
+      "pickup"
+    ).value.trim();
+
+
+  const destination =
+    document.getElementById(
+      "destination"
+    ).value.trim();
+
+
+  if (
+    !pickup ||
+    !destination
+  ) {
+
+    alert(
+      "Please enter pickup and destination."
+    );
+
+    return;
+
+  }
+
+
+  if (!calculatedFare) {
+
+    calculateAndPrepareBooking();
+
+  }
+
+
+  const booking = {
+
+    pickup,
+
+    destination,
+
+    vehicle:
+      selectedVehicle,
+
+    date:
+      getSelectedDate(),
+
+    time:
+      document.getElementById(
+        "rideTime"
+      ).value ||
+      "09:00",
+
+    fare:
+      calculatedFare,
+
+    distance:
+      calculatedDistance,
+
+    bookingType:
+      "Manual Booking",
+
+    bookedAt:
+      new Date().toISOString()
+
+  };
+
+
+  localStorage.setItem(
+    "commutePassLastBooking",
+    JSON.stringify(
+      booking
+    )
+  );
+
+
+  /*
+    UPDATE HERO CARD
+  */
+
+  updateTodaysCommute(
+    booking
+  );
+
+
+  alert(
+    `Ride booked successfully!\n\nFare: ₹${calculatedFare}`
+  );
+
+
+  assistantSay(
+    `Your ride has been booked successfully. The fare is ${calculatedFare} rupees.`
+  );
+
+
+  startRideSimulation(
+    selectedVehicle,
+    calculatedFare
+  );
+
+}
+
+
+/* ============================================================
+   UPDATE TODAY'S COMMUTE
+   ============================================================ */
+
+function updateTodaysCommute(
+  booking
+) {
+
+  /*
+    Route
+  */
+
+  document.getElementById(
+    "commuteRoute"
+  ).textContent =
+    `${capitalize(booking.pickup)} → ${capitalize(booking.destination)}`;
+
+
+  /*
+    Pickup
+  */
+
+  document.getElementById(
+    "commutePickup"
+  ).textContent =
+    capitalize(
+      booking.pickup
+    );
+
+
+  /*
+    Destination
+  */
+
+  document.getElementById(
+    "commuteDestination"
+  ).textContent =
+    capitalize(
+      booking.destination
+    );
+
+
+  /*
+    Fare
+  */
+
+  document.getElementById(
+    "commuteFare"
+  ).textContent =
+    "₹" + booking.fare;
+
+
+  /*
+    Distance
+  */
+
+  document.getElementById(
+    "commuteDistance"
+  ).textContent =
+    booking.distance +
+    " km";
+
+
+  /*
+    Time
+  */
+
+  document.getElementById(
+    "commuteTime"
+  ).textContent =
+    formatTime(
+      booking.time
+    );
+
+
+  /*
+    Vehicle
+  */
+
+  document.getElementById(
+    "commuteVehicle"
+  ).textContent =
+    `${vehicles[booking.vehicle].emoji} ${vehicles[booking.vehicle].name}`;
+
+
+  /*
+    Date label
+  */
+
+  const today =
+    new Date()
+      .toLocaleDateString();
+
+
+  if (
+    booking.date === today ||
+    booking.dateType === "today"
+  ) {
+
+    document.getElementById(
+      "commuteDateLabel"
+    ).textContent =
+      "Today's commute";
+
+  }
+
+  else {
+
+    document.getElementById(
+      "commuteDateLabel"
+    ).textContent =
+      `Upcoming commute • ${booking.date}`;
+
+  }
+
+}
+
+
+/* ============================================================
+   LOAD LAST BOOKING
+   ============================================================ */
+
+function loadLastBooking() {
+
+  const saved =
+    localStorage.getItem(
+      "commutePassLastBooking"
+    );
+
+
+  if (!saved) {
+
+    return;
+
+  }
+
+
+  try {
+
+    const booking =
+      JSON.parse(saved);
+
+
+    if (
+      booking.pickup &&
+      booking.destination &&
+      booking.vehicle
+    ) {
+
+      updateTodaysCommute(
+        booking
+      );
+
+    }
+
+  }
+
+  catch(error) {
+
+    console.log(
+      "Could not load previous booking."
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   RIDE SIMULATION
+   ============================================================ */
+
+function startRideSimulation(
+  vehicle,
+  fare
+) {
+
+  const status =
+    document.getElementById(
+      "rideStatus"
+    );
+
+
+  const title =
+    document.getElementById(
+      "rideStatusTitle"
+    );
+
+
+  const message =
+    document.getElementById(
+      "rideMessage"
+    );
+
+
+  const progress =
+    document.getElementById(
+      "progressBar"
+    );
+
+
+  status.classList.remove(
+    "hidden"
+  );
+
+
+  title.textContent =
+    `${vehicles[vehicle].emoji} Finding your driver...`;
+
+
+  message.textContent =
+    `Fare confirmed: ₹${fare}`;
+
+
+  progress.style.width =
+    "15%";
+
+
+  setTimeout(() => {
+
+    title.textContent =
+      "Driver found";
+
+
+    message.textContent =
+      "Your driver has accepted the ride.";
+
+
+    progress.style.width =
+      "45%";
+
+  }, 1500);
+
+
+  setTimeout(() => {
+
+    title.textContent =
+      "Driver arriving";
+
+
+    message.textContent =
+      "Your driver is on the way to the pickup point.";
+
+
+    progress.style.width =
+      "75%";
+
+  }, 3000);
+
+
+  setTimeout(() => {
+
+    title.textContent =
+      "Ride ready";
+
+
+    message.textContent =
+      "Your CommutePass ride is ready to start.";
+
+
+    progress.style.width =
+      "100%";
+
+  }, 4500);
+
+}
+
+
+/* ============================================================
+   FORMAT TIME
+   ============================================================ */
+
+function formatTime(time) {
+
+  if (!time) {
+
+    return "9:00 AM";
+
+  }
+
+
+  const [
+    hours,
+    minutes
+  ] =
+    time.split(":");
+
+
+  let hour =
+    parseInt(hours);
+
+
+  const period =
+    hour >= 12
+      ? "PM"
+      : "AM";
+
+
+  hour =
+    hour % 12 || 12;
+
+
+  return `${hour}:${minutes} ${period}`;
+
+}
+
+
+/* ============================================================
+   CAPITALIZE
+   ============================================================ */
+
+function capitalize(text) {
+
+  return text
+    .split(" ")
+    .map(
+      word =>
+        word.charAt(0).toUpperCase() +
+        word.slice(1)
+    )
+    .join(" ");
+
+}
+
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
+
+    /*
+      Set minimum date
+    */
+
+    document.getElementById(
+      "specificDate"
+    ).min =
+      new Date()
+        .toISOString()
+        .split("T")[0];
+
+
+    /*
+      Load previous booking
+      into Today's Commute
+    */
+
+    loadLastBooking();
+
+  }
+);
+
+</script>
+
+</body>
+</html>
